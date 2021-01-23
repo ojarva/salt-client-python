@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from exceptions import ConnectionException, AuthenticationException
+from .exceptions import ConnectionException, AuthenticationException
 
 
 class SaltClient(object):
@@ -13,7 +13,7 @@ class SaltClient(object):
         self.verify_ssl_cert = kwargs.get("verify_ssl_cert", False)
 
     def login(self):
-        req = requests.post(self.salt_host + "/login", data={"eauth": "pam", "username": self.username, "password": self.password}, headers={"Accept": "application/json"}, verify=self.verify_ssl_cert, timeout=5.0)
+        req = requests.post(self.salt_host + "/login", data={"eauth": "pam", "username": self.salt_username, "password": self.salt_password}, headers={"Accept": "application/json"}, verify=self.verify_ssl_cert, timeout=5.0)
         if req.status_code != 200:
             raise ConnectionException("Signing in to salt (%s) failed with status code %s (body %s)" % (self.salt_host, req.status_code, req.text))
         logging.debug("Salt login response: %s - %s", req.status_code, req.text)
@@ -33,7 +33,7 @@ class SaltClient(object):
         data = resp["return"][0]
         if len(data) == 0:  # returns [{}] if request fails
             return False
-        if data.get(vm_id):  # eturns [{"node-name": True}] if ping succeeds
+        if data.get(minion_id):  # returns [{"node-name": True}] if ping succeeds
             return True
         return None
 
@@ -47,7 +47,7 @@ class SaltClient(object):
         resp = requests.post(self.salt_host, data={"client": "runner", "fun": "jobs.lookup_jid", "jid": job_id}, headers=self._get_headers(), verify=self.verify_ssl_cert)
         logging.debug("lookup_jid response: %s - %s", resp.status_code, resp.text)
         data = resp.json()
-        as
+        return data
 
     def run_command(self, target, command, args):
         resp = requests.post(self.salt_host, data={"client": "local", "tgt": target, "fun": command, "arg": args}, headers=self._get_headers(), verify=self.verify_ssl_cert)
